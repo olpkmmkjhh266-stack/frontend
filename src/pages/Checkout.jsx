@@ -63,7 +63,7 @@ const Checkout = () => {
 
                 console.log("🚀 جاري إرسال الطلب للسيرفور...");
 
-                const response = await axios.post('https://25ae9fba-373f-4c87-9e13-4f6d9e897713-00-2lenq371o9y9p.picard.replit.dev:3000/api/bookings', submitData, {
+                const response = await axios.post('https://backend--olpkmmkjhh266.replit.app/api/bookings', submitData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
 

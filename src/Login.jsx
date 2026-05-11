@@ -11,7 +11,7 @@ const Login = ({ setToken }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('https://25ae9fba-373f-4c87-9e13-4f6d9e897713-00-2lenq371o9y9p.picard.replit.dev:3000/api/admin/login', { username, password });
+      const res = await axios.post('https://backend--olpkmmkjhh266.replit.app/api/admin/login', { username, password });
       localStorage.setItem('token', res.data.token);
       setToken(res.data.token);
       navigate('/admin'); // كيديك لصفحة الأدمين مورا الدخول

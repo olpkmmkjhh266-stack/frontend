@@ -1,4 +1,3 @@
-import React from 'react';
 import { FaWhatsapp } from 'react-icons/fa'; // تأكد بلي مكتبة react-icons مسطاليا
 
 const WhatsAppButton = () => {

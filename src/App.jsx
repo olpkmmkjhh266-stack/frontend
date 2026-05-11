@@ -152,7 +152,7 @@ const Admin = ({ cars, fetchCars, setToken }) => {
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, id: null, newStatus: '' });
 
   const fetchBookings = () => {
-    axios.get('https://25ae9fba-373f-4c87-9e13-4f6d9e897713-00-2lenq371o9y9p.picard.replit.dev:3000/api/bookings').then(res => setBookings(res.data));
+    axios.get('https://backend--olpkmmkjhh266.replit.app/api/bookings').then(res => setBookings(res.data));
   };
 
   useEffect(() => {
@@ -170,7 +170,7 @@ const Admin = ({ cars, fetchCars, setToken }) => {
         images: imagesArray.length > 0 ? imagesArray : undefined 
       };
 
-      axios.post('https://25ae9fba-373f-4c87-9e13-4f6d9e897713-00-2lenq371o9y9p.picard.replit.dev:3000/api/cars', carData).then(() => {
+      axios.post('https://backend--olpkmmkjhh266.replit.app/api/cars', carData).then(() => {
         fetchCars();
         setNewCar({ brand: '', model: '', registration: '', pricePerDay: '', category: 'اقتصادية', location: '', imagesString: '' });
         toast.success('تمت إضافة السيارة بنجاح! 🚗');
@@ -181,7 +181,7 @@ const Admin = ({ cars, fetchCars, setToken }) => {
 
   const handleDeleteCar = (id) => {
     if (window.confirm('هل أنت متأكد من مسح هذه السيارة؟')) {
-      axios.delete(`https://25ae9fba-373f-4c87-9e13-4f6d9e897713-00-2lenq371o9y9p.picard.replit.dev:3000/api/cars/${id}`).then(() => fetchCars());
+      axios.delete(`https://backend--olpkmmkjhh266.replit.app/api/cars/${id}`).then(() => fetchCars());
     }
   };
 
@@ -189,7 +189,7 @@ const Admin = ({ cars, fetchCars, setToken }) => {
   const executeUpdateStatus = async () => {
       const { id, newStatus } = confirmDialog;
       try {
-        await axios.put(`https://25ae9fba-373f-4c87-9e13-4f6d9e897713-00-2lenq371o9y9p.picard.replit.dev:3000/api/bookings/${id}/status`, { status: newStatus });
+        await axios.put(`https://backend--olpkmmkjhh266.replit.app/api/bookings/${id}/status`, { status: newStatus });
         fetchBookings(); // تحديث الجدول
         toast.success(`تم ${newStatus === 'Accepted' ? 'قبول ✅' : 'رفض ❌'} الطلب بنجاح!`);
       } catch (err) {
@@ -422,7 +422,7 @@ function App() {
   const [cars, setCars] = useState([]);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [searchFilters, setSearchFilters] = useState({ city: '', carName: '' });
-  const fetchCars = () => axios.get('https://25ae9fba-373f-4c87-9e13-4f6d9e897713-00-2lenq371o9y9p.picard.replit.dev:3000/api/cars').then(res => setCars(res.data));
+  const fetchCars = () => axios.get('https://backend--olpkmmkjhh266.replit.app/api/cars').then(res => setCars(res.data));
   useEffect(() => { fetchCars(); }, []);
 
   return (

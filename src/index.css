@@ -1,0 +1,182 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@100;400;700;900&display=swap');
+
+@import "tailwindcss";
+
+:root {
+  --primary: #c4a661; /* لون ذهبي ملكي */
+  --bg: #0a0a0a;     /* أسود فخم */
+}
+
+body {
+  font-family: 'Cairo', sans-serif;
+  background-color: var(--bg);
+  color: white;
+}
+
+/* تحريك خفيف للصور */
+.hero-image-animate {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
+}
+/* بقعة ضوء سينمائية */
+.glow-bg {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(196,166,97,0.08) 0%, rgba(0,0,0,0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* حركة انسيابية للكارطات */
+.car-card {
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.car-card:hover {
+  transform: translateY(-15px) scale(1.02);
+  box-shadow: 0 30px 60px -12px rgba(0,0,0,0.5), 0 18px 36px -18px rgba(196,166,97,0.2);
+}
+/* تخصيص الكالندر لتناسب الديزاين الملكي */
+.react-calendar {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 24px !important;
+  color: white !important;
+  font-family: 'Cairo', sans-serif !important;
+  padding: 15px !important;
+  backdrop-filter: blur(10px);
+  width: 100% !important;
+}
+
+/* تبديل الأيام والشهور للأبيض */
+.react-calendar__navigation button {
+  color: #c4a661 !important;
+  font-size: 1.2rem !important;
+  font-weight: 900 !important;
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  color: rgba(255, 255, 255, 0.5) !important;
+  text-decoration: none !important;
+  font-weight: 700 !important;
+}
+
+/* تخصيص الأيام */
+.react-calendar__tile {
+  color: white !important;
+  height: 50px !important;
+  border-radius: 12px !important;
+  transition: all 0.3s ease !important;
+}
+
+.react-calendar__tile:enabled:hover, 
+.react-calendar__tile:enabled:focus {
+  background-color: rgba(196, 166, 97, 0.2) !important;
+  color: #c4a661 !important;
+}
+
+/* اليوم المختار (الفترة) */
+.react-calendar__tile--active {
+  background: #c4a661 !important;
+  color: black !important;
+  font-weight: 900 !important;
+  box-shadow: 0 0 20px rgba(196, 166, 97, 0.4) !important;
+}
+
+.react-calendar__tile--rangeStart, 
+.react-calendar__tile--rangeEnd {
+  background: #c4a661 !important;
+  border-radius: 12px !important;
+}
+
+/* حيد داك الخط اللي تحت الأيام */
+abbr[title] {
+  text-decoration: none !important;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+/* ==========================================
+   تعديلات كالوندرية النينجا (React Calendar)
+   ========================================== */
+
+/* الخلفية العامة */
+.react-calendar {
+  background: transparent !important;
+  border: none !important;
+  color: white !important;
+  width: 100% !important;
+  font-family: 'Cairo', sans-serif !important;
+}
+
+/* الأزرار الفوقانية (الشهر والسنة) */
+.react-calendar__navigation button {
+  color: #c4a661 !important;
+  font-weight: 900 !important;
+  background: transparent !important;
+  font-size: 1.2rem !important;
+  border-radius: 10px !important;
+  transition: all 0.3s ease;
+}
+.react-calendar__navigation button:enabled:hover,
+.react-calendar__navigation button:enabled:focus {
+  background: rgba(196, 166, 97, 0.1) !important;
+}
+
+/* أيام الأسبوع (DIM, LUN...) */
+.react-calendar__month-view__weekdays {
+  color: gray !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  font-size: 0.75rem !important;
+  margin-bottom: 10px !important;
+}
+.react-calendar__month-view__weekdays abbr {
+  text-decoration: none !important; /* باش نحيدو داك الخط المقطع لتحت */
+}
+
+/* الأيام العادية (الأرقام) */
+.react-calendar__tile {
+  color: white !important;
+  background: transparent !important;
+  border-radius: 12px !important;
+  padding: 12px 6px !important;
+  font-weight: bold !important;
+  transition: all 0.2s ease;
+}
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #c4a661 !important;
+}
+
+/* الأيام ديال الشهر اللي فات ولا الجاي (مضببين) */
+.react-calendar__month-view__days__day--neighboringMonth {
+  color: #333 !important;
+}
+
+/* الأيام اللي تختارو (الذهبي الفخم) */
+.react-calendar__tile--active,
+.react-calendar__tile--hasActive,
+.react-calendar__tile--hover {
+  background: #c4a661 !important;
+  color: black !important;
+  font-weight: 900 !important;
+  border-radius: 12px !important;
+}
+.react-calendar__tile--active:enabled:hover,
+.react-calendar__tile--active:enabled:focus {
+  background: white !important;
+  color: black !important;
+}

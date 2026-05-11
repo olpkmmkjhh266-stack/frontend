@@ -19,7 +19,7 @@ const CarDetails = () => {
   const [mainImage, setMainImage] = useState('');
 
   useEffect(() => {
-    axios.get(`https://25ae9fba-373f-4c87-9e13-4f6d9e897713-00-2lenq371o9y9p.picard.replit.dev:3000/api/cars/${id}`).then(res => {
+    axios.get(`https://backend--olpkmmkjhh266.replit.app/api/cars/${id}`).then(res => {
       setCar(res.data);
       // 👇 كنجبدو التصويرة اللولة باش تبان هي الأولى، إيلا مكانتش كنجبدو القديمة
       const firstImg = res.data.images && res.data.images.length > 0 ? res.data.images[0] : res.data.image;

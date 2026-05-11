@@ -13,7 +13,7 @@ import Cars from './pages/Cars';
 import Offers from './pages/Offers';
 import { Toaster, toast } from 'react-hot-toast';
 import TrackBooking from './pages/TrackBooking';
-
+import WhatsAppButton from './components/WhatsAppButton';
 // --- 1. مكون عرض السيارات (Fleet Section) ---
 const CarFleet = ({ cars, filters }) => {
   const [categoryFilter, setCategoryFilter] = useState('كل السيارات');
@@ -460,6 +460,7 @@ function App() {
           <Route path="/cars" element={<Cars cars={cars} />} />
           <Route path="/offers" element={<Offers />} />
           <Route path="/track" element={<TrackBooking />} />
+          <WhatsAppButton />
         </Routes>
       </div>
     </Router>

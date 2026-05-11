@@ -42,7 +42,7 @@ const TrackBooking = () => {
     
     setLoading(true);
     try {
-      const res = await axios.get(`https://25ae9fba-373f-4c87-9e13-4f6d9e897713-00-2lenq371o9y9p.picard.replit.dev:3000/api/bookings/track/${refCode.trim()}`);
+      const res = await axios.get(`https://backend--olpkmmkjhh266.replit.app/api/bookings/track/${refCode.trim()}`);
       setBooking(res.data);
       toast.success('تم العثور على الحجز!');
     } catch (error) {
@@ -78,7 +78,7 @@ const TrackBooking = () => {
       if (receiptFile) formData.append('receiptImage', receiptFile);
 
       try {
-          const res = await axios.put(`https://25ae9fba-373f-4c87-9e13-4f6d9e897713-00-2lenq371o9y9p.picard.replit.dev:3000/api/bookings/track/${booking.referenceCode}/pay`, formData, {
+          const res = await axios.put(`https://backend--olpkmmkjhh266.replit.app/api/bookings/track/${booking.referenceCode}/pay`, formData, {
               headers: { 'Content-Type': 'multipart/form-data' }
           });
           setBooking(res.data);

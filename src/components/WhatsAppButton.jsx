@@ -1,7 +1,7 @@
 
 const WhatsAppButton = () => {
   // حط النمرة ديالك هنا 
-  const phoneNumber = '212645924411'; // بدل هادي بنمرتك
+  const phoneNumber = '212600000000'; // بدل هادي بنمرتك
   const message = 'مرحباً، بغيت نستفسر على كراء سيارة.';
 
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;

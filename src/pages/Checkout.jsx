@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useState, useRef } from 'react';
+import { useState, useRef ,useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import SignatureCanvas from 'react-signature-canvas';
@@ -13,7 +13,13 @@ const Checkout = () => {
   const [step, setStep] = useState(1);
   const [reference, setReference] = useState(null); 
   const sigCanvas = useRef({}); 
-
+  // 👇 هاد الكود غيطلع الشاشة للفوق كلما تبدلات المرحلة (step)
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }, [step]); // 👈 هادي كتعني: حضي المتغير step، إيلا تبدل، طلع الشاشة للفوق
   // 👇 زدنا مكان الاستلام والعنوان فـ الفورمولير
   const [formData, setFormData] = useState({
     fullName: '', phone: '', idCard: '', deliveryType: 'agency', deliveryAddress: ''

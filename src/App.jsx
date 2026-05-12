@@ -567,6 +567,15 @@ const Admin = ({ cars, fetchCars, setToken }) => {
                             >
                               📄 تحميل العقد (PDF)
                             </button>
+                            <div className="text-[10px] text-[#c4a661] mt-2 font-bold bg-[#c4a661]/10 w-fit px-2 py-1 rounded">
+                            📍 {
+                              !b.customer?.deliveryType 
+                                ? 'الاستلام في الوكالة' // هادي كتحمينا من الحجوزات القديمة اللي مافيهمش هاد المعلومة
+                                : b.customer?.deliveryType === 'agency' 
+                                  ? 'الاستلام في الوكالة' 
+                                  : `التوصيل إلى: ${b.customer?.deliveryAddress || 'لم يتم تحديد العنوان'}`
+                            }
+                          </div>
                           </div>
                         </div>
                       </td>

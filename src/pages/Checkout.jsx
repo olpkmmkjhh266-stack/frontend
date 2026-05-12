@@ -11,18 +11,20 @@ const Checkout = () => {
   
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
-  const [reference, setReference] = useState(null); // باش نخبيو الكود المرجعي
-  const sigCanvas = useRef({}); // مرجع (Ref) لكانفا التوقيع
+  const [reference, setReference] = useState(null); 
+  const sigCanvas = useRef({}); 
 
+  // 👇 زدنا مكان الاستلام والعنوان فـ الفورمولير
   const [formData, setFormData] = useState({
-    fullName: '', phone: '', idCard: ''
+    fullName: '', phone: '', idCard: '', deliveryType: 'agency', deliveryAddress: ''
   });
+  
+  // 👇 حالة الموافقة على الشروط
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
-  // ملفات الدوسي
   const [cinFile, setCinFile] = useState(null);
   const [permisFile, setPermisFile] = useState(null);
 
-  // دالة باش نحولو التوقيع من Base64 لـ ملف (Blob) باش يقبلو الباك-اند
   const dataURLtoBlob = (dataurl) => {
     let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
         bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
@@ -30,54 +32,65 @@ const Checkout = () => {
     return new Blob([u8arr], {type:mime});
   };
 
-    const handleBooking = async (e) => {
-        e.preventDefault();
-        if (step === 1) { setStep(2); return; }
-        
-        if (step === 2) {
-            if (!cinFile || !permisFile) {
-                toast.error('المرجو إرفاق صورة البطاقة الوطنية ورخصة السياقة.');
-                return;
-            }
-            if (sigCanvas.current.isEmpty()) {
-                toast.error('المرجو وضع توقيعك الإلكتروني أسفل العقد.');
-                return;
-            }
-
-            setLoading(true);
-            
-            try {
-                // تجهيز البيانات كـ FormData
-                const submitData = new FormData();
-                submitData.append('carId', car._id);
-                submitData.append('startDate', date[0]);
-                submitData.append('endDate', date[1]);
-                submitData.append('totalPrice', totalPrice);
-                submitData.append('customer', JSON.stringify(formData));
-                submitData.append('cinImage', cinFile);
-                submitData.append('permisImage', permisFile);
-                
-                // تحويل التوقيع وإضافته
-                const signatureBlob = dataURLtoBlob(sigCanvas.current.getCanvas().toDataURL('image/png'));
-                submitData.append('signatureImage', signatureBlob, 'signature.png');
-
-                console.log("🚀 جاري إرسال الطلب للسيرفور...");
-
-                const response = await axios.post('https://backend--olpkmmkjhh266.replit.app/api/bookings', submitData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-
-                toast.success('تم رفع ملفك بنجاح! 🚀');
-                setReference(response.data.referenceCode);
-                setStep(3); 
-            } catch (error) {
-                console.error("🔴 إيرور في الفرونت-اند:", error);
-                toast.error('حدث خطأ! المرجو تفقد الكونسول (F12).');
-            } finally {
-                setLoading(false); // هادي غتحبس ديك "جاري الإرسال..." واخا يوقع إيرور
-            }
+  const handleBooking = async (e) => {
+      e.preventDefault();
+      
+      // التحقق فـ المرحلة الأولى
+      if (step === 1) { 
+        if (formData.deliveryType === 'hotel' && !formData.deliveryAddress.trim()) {
+            return toast.error('المرجو إدخال عنوان التسليم بالتفصيل.');
         }
-    };
+        if (!termsAccepted) {
+            return toast.error('يجب الموافقة على الشروط والأحكام للمتابعة.');
+        }
+        setStep(2); 
+        return; 
+      }
+      
+      // التحقق والإرسال فـ المرحلة الثانية
+      if (step === 2) {
+          if (!cinFile || !permisFile) {
+              toast.error('المرجو إرفاق صورة البطاقة الوطنية ورخصة السياقة.');
+              return;
+          }
+          if (sigCanvas.current.isEmpty()) {
+              toast.error('المرجو وضع توقيعك الإلكتروني أسفل العقد.');
+              return;
+          }
+
+          setLoading(true);
+          
+          try {
+              const submitData = new FormData();
+              submitData.append('carId', car._id);
+              submitData.append('startDate', date[0]);
+              submitData.append('endDate', date[1]);
+              submitData.append('totalPrice', totalPrice);
+              
+              // الكليان + العنوان غيمشيو مجموعين للباك-اند
+              submitData.append('customer', JSON.stringify(formData));
+              
+              submitData.append('cinImage', cinFile);
+              submitData.append('permisImage', permisFile);
+              
+              const signatureBlob = dataURLtoBlob(sigCanvas.current.getCanvas().toDataURL('image/png'));
+              submitData.append('signatureImage', signatureBlob, 'signature.png');
+
+              const response = await axios.post('https://backend--olpkmmkjhh266.replit.app/api/bookings', submitData, {
+                  headers: { 'Content-Type': 'multipart/form-data' }
+              });
+
+              toast.success('تم رفع ملفك بنجاح! 🚀');
+              setReference(response.data.referenceCode);
+              setStep(3); 
+          } catch (error) {
+              console.error("🔴 إيرور في الفرونت-اند:", error);
+              toast.error('حدث خطأ أثناء إرسال الطلب.');
+          } finally {
+              setLoading(false);
+          }
+      }
+  };
 
   if (!car) return <div className="pt-40 text-center text-white">بيانات مفقودة</div>;
 
@@ -85,7 +98,7 @@ const Checkout = () => {
     <div className="min-h-screen bg-[#050505] pt-28 md:pt-32 pb-20 px-4 md:px-6 text-white text-right font-['Cairo']" dir="rtl">
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
         
-        {/* ================= Sidebar (معلومات الطوموبيل) ================= */}
+        {/* ================= Sidebar ================= */}
         <div className={`lg:col-span-4 order-2 lg:order-1 ${step === 3 ? 'hidden lg:block' : ''}`}>
           <div className="bg-[#111111] p-6 md:p-8 rounded-[30px] border border-white/5 shadow-2xl lg:sticky top-32">
             <img src={car.images && car.images.length > 0 ? car.images[0] : car.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-6" alt={car.brand} />
@@ -104,44 +117,97 @@ const Checkout = () => {
         {/* ================= Main Content ================= */}
         <div className={`lg:col-span-8 order-1 lg:order-2 ${step === 3 ? 'lg:col-span-12 flex justify-center' : ''}`}>
           
-          {/* شريط المراحل */}
           {step < 3 && (
             <div className="flex items-center gap-3 md:gap-4 mb-8 justify-center md:justify-start">
               <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black text-sm md:text-base ${step === 1 ? 'bg-[#c4a661] text-black' : 'bg-green-500 text-white'}`}>1</div>
               <div className="h-0.5 w-6 md:w-10 bg-white/10"></div>
               <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black text-sm md:text-base ${step === 2 ? 'bg-[#c4a661] text-black' : 'bg-white/10 text-white'}`}>2</div>
-              <h2 className="text-2xl md:text-3xl font-black mr-2 md:mr-4">{step === 1 ? 'معلومات الزبون' : 'العقد والتوقيع'}</h2>
+              <h2 className="text-2xl md:text-3xl font-black mr-2 md:mr-4">{step === 1 ? 'المعلومات والتسليم' : 'الوثائق والتوقيع'}</h2>
             </div>
           )}
 
           {step < 3 ? (
             <form onSubmit={handleBooking} className="bg-[#111111] p-6 md:p-10 rounded-[30px] md:rounded-[40px] border border-white/10 shadow-3xl">
               
-              {/* ----------------- المرحلة 1: معلومات الزبون ----------------- */}
+              {/* ----------------- المرحلة 1: معلومات الزبون والتسليم ----------------- */}
               {step === 1 && (
-                <div className="space-y-5 md:space-y-6 animate-fade-in">
+                <div className="space-y-6 md:space-y-8 animate-fade-in">
+                  
+                  {/* معلومات شخصية */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
                     <div className="space-y-2">
                       <label className="text-[10px] md:text-xs font-black text-[#c4a661] uppercase mr-2">الاسم الكامل</label>
-                      <input required className="w-full bg-white/5 border border-white/10 p-3.5 md:p-4 rounded-xl md:rounded-2xl outline-none focus:border-[#c4a661]" type="text" onChange={(e)=>setFormData({...formData, fullName: e.target.value})} />
+                      <input required className="w-full bg-white/5 border border-white/10 p-3.5 md:p-4 rounded-xl outline-none focus:border-[#c4a661]" type="text" value={formData.fullName} onChange={(e)=>setFormData({...formData, fullName: e.target.value})} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] md:text-xs font-black text-[#c4a661] uppercase mr-2">رقم الهاتف</label>
-                      <input required className="w-full bg-white/5 border border-white/10 p-3.5 md:p-4 rounded-xl md:rounded-2xl outline-none focus:border-[#c4a661] text-left font-mono" type="tel" placeholder="06XXXXXXXX" onChange={(e)=>setFormData({...formData, phone: e.target.value})} />
+                      <input required className="w-full bg-white/5 border border-white/10 p-3.5 md:p-4 rounded-xl outline-none focus:border-[#c4a661] text-left font-mono" type="tel" placeholder="06XXXXXXXX" value={formData.phone} onChange={(e)=>setFormData({...formData, phone: e.target.value})} />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] md:text-xs font-black text-[#c4a661] uppercase mr-2">رقم البطاقة الوطنية (CIN)</label>
-                    <input required className="w-full bg-white/5 border border-white/10 p-3.5 md:p-4 rounded-xl md:rounded-2xl outline-none focus:border-[#c4a661]" type="text" onChange={(e)=>setFormData({...formData, idCard: e.target.value})} />
+                    <input required className="w-full bg-white/5 border border-white/10 p-3.5 md:p-4 rounded-xl outline-none focus:border-[#c4a661]" type="text" value={formData.idCard} onChange={(e)=>setFormData({...formData, idCard: e.target.value})} />
                   </div>
+
+                  <hr className="border-white/5 my-6" />
+
+                  {/* خيارات الاستلام */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-black text-[#c4a661]">📍 مكان استلام السيارة</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div 
+                        onClick={() => setFormData({...formData, deliveryType: 'agency', deliveryAddress: ''})}
+                        className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col items-center gap-2 ${formData.deliveryType === 'agency' ? 'border-[#c4a661] bg-[#c4a661]/10 text-[#c4a661]' : 'border-white/10 bg-white/5 hover:bg-white/10 text-gray-400'}`}
+                      >
+                        <span className="text-2xl">🏢</span>
+                        <span className="font-bold text-sm">مقر الوكالة (مجاناً)</span>
+                      </div>
+                      <div 
+                        onClick={() => setFormData({...formData, deliveryType: 'hotel'})}
+                        className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col items-center gap-2 ${formData.deliveryType === 'hotel' ? 'border-[#c4a661] bg-[#c4a661]/10 text-[#c4a661]' : 'border-white/10 bg-white/5 hover:bg-white/10 text-gray-400'}`}
+                      >
+                        <span className="text-2xl">📍</span>
+                        <span className="font-bold text-sm">فندق / منزل</span>
+                      </div>
+                    </div>
+
+                    {/* حقل العنوان كيطلع غير إيلا عزل فندق/منزل */}
+                    {formData.deliveryType === 'hotel' && (
+                      <div className="pt-2 animate-fade-in">
+                        <label className="text-[10px] md:text-xs font-black text-gray-400 mr-2">أدخل عنوان الاستلام بالتفصيل</label>
+                        <input 
+                          type="text" 
+                          placeholder="اسم الفندق، أو رقم المنزل والشارع..." 
+                          className="w-full bg-white/5 border border-white/10 p-3.5 md:p-4 rounded-xl outline-none focus:border-[#c4a661] mt-2"
+                          value={formData.deliveryAddress}
+                          onChange={(e)=>setFormData({...formData, deliveryAddress: e.target.value})}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <hr className="border-white/5 my-6" />
+
+                  {/* الشروط والأحكام */}
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input 
+                      type="checkbox" 
+                      className="mt-1 w-5 h-5 accent-[#c4a661] cursor-pointer shrink-0" 
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                    />
+                    <span className="text-xs md:text-sm text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                      أوافق على الشروط والأحكام الخاصة بكراء السيارة، وأقر بأنني أتحمل المسؤولية الكاملة عن أي مخالفات مرورية أو أضرار تلحق بالسيارة خلال فترة الكراء.
+                    </span>
+                  </label>
                   
-                  <button className="w-full bg-[#c4a661] text-black font-black py-4 md:py-5 rounded-xl md:rounded-2xl text-lg md:text-xl mt-8 cursor-pointer hover:bg-white transition-all shadow-lg">
-                    متابعة للعقد والتوقيع
+                  <button className="w-full bg-[#c4a661] text-black font-black py-4 md:py-5 rounded-xl text-lg mt-8 cursor-pointer hover:bg-white transition-all shadow-[0_0_20px_rgba(196,166,97,0.3)]">
+                    متابعة لرفع الوثائق والتوقيع
                   </button>
                 </div>
               )}
 
-              {/* ----------------- المرحلة 2: رفع الدوسي والتوقيع ----------------- */}
+              {/* ----------------- المرحلة 2: الوثائق والتوقيع ----------------- */}
               {step === 2 && (
                 <div className="space-y-6 md:space-y-8 animate-fade-in">
                   <p className="text-gray-400 font-bold text-sm md:text-base border-b border-white/5 pb-4">
@@ -172,7 +238,7 @@ const Checkout = () => {
                       <div className="bg-[#0a0a0a] rounded-xl border border-dashed border-white/20 overflow-hidden cursor-crosshair">
                          <SignatureCanvas 
                             ref={sigCanvas} 
-                            penColor="#c4a661" // لون الستيلو ذهبي 👑
+                            penColor="#c4a661"
                             canvasProps={{ className: 'w-full h-40 md:h-48' }} 
                          />
                       </div>
@@ -180,10 +246,10 @@ const Checkout = () => {
                   </div>
 
                   <div className="flex gap-3 md:gap-4 mt-8 md:mt-10">
-                    <button type="button" onClick={() => setStep(1)} className="w-1/3 bg-white/5 hover:bg-white/10 text-white font-black py-4 md:py-5 rounded-xl md:rounded-2xl transition-all cursor-pointer text-sm md:text-base">
+                    <button type="button" onClick={() => setStep(1)} className="w-1/3 bg-white/5 hover:bg-white/10 text-white font-black py-4 rounded-xl transition-all cursor-pointer">
                       رجوع
                     </button>
-                    <button type="submit" disabled={loading} className="w-2/3 bg-[#c4a661] hover:bg-white text-black font-black py-4 md:py-5 rounded-xl md:rounded-2xl text-base md:text-xl transition-all shadow-lg cursor-pointer flex justify-center items-center gap-2">
+                    <button type="submit" disabled={loading} className="w-2/3 bg-[#c4a661] hover:bg-white text-black font-black py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(196,166,97,0.3)] cursor-pointer flex justify-center items-center gap-2">
                       {loading ? <span className="animate-pulse">جاري إرسال الملف...</span> : 'تأكيد وإرسال الملف'}
                     </button>
                   </div>
@@ -191,27 +257,22 @@ const Checkout = () => {
               )}
             </form>
           ) : (
-            /* ----------------- المرحلة 3: شاشة النجاح والكود المرجعي ----------------- */
-            <div className="bg-[#111111] p-8 md:p-14 rounded-[30px] md:rounded-[40px] border border-[#c4a661]/30 shadow-[0_0_50px_rgba(196,166,97,0.1)] text-center animate-fade-in max-w-2xl w-full">
+            /* ----------------- المرحلة 3: شاشة النجاح ----------------- */
+            <div className="bg-[#111111] p-8 md:p-14 rounded-[30px] border border-[#c4a661]/30 shadow-[0_0_50px_rgba(196,166,97,0.1)] text-center animate-fade-in max-w-2xl w-full">
                 <div className="w-24 h-24 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center text-5xl mx-auto mb-6 border border-green-500/20">✓</div>
-                <h2 className="text-3xl md:text-4xl font-black text-white mb-4">تم استلام ملفك بنجاح!</h2>
+                <h2 className="text-3xl font-black text-white mb-4">تم استلام طلبك بنجاح!</h2>
                 <p className="text-gray-400 font-bold mb-8 leading-relaxed">
-                    ملفك الآن قيد المراجعة من طرف الإدارة للتأكد من الوثائق. يرجى الاحتفاظ بالكود المرجعي أسفله لتتبع حالة حجزك وإتمام الدفع لاحقاً.
+                    ملفك الآن قيد المراجعة. يرجى الاحتفاظ بالكود المرجعي أسفله لتتبع حالة حجزك.
                 </p>
-                
                 <div className="bg-black/50 border border-[#c4a661]/40 p-6 rounded-2xl mb-8">
-                    <span className="block text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">الكود المرجعي الخاص بك</span>
-                    <span className="block text-4xl md:text-5xl font-black text-[#c4a661] tracking-widest font-mono">{reference}</span>
+                    <span className="block text-xs text-gray-500 font-bold uppercase tracking-widest mb-2">الكود المرجعي</span>
+                    <span className="block text-4xl font-black text-[#c4a661] tracking-widest font-mono">{reference}</span>
                 </div>
-
-                <p className="text-xs text-gray-500 font-bold mb-8">سيتم التواصل معك عبر الواتساب فور الموافقة على ملفك.</p>
-
                 <button onClick={() => navigate('/')} className="bg-white/10 hover:bg-[#c4a661] text-white hover:text-black font-black py-4 px-10 rounded-xl transition-all cursor-pointer">
                     العودة للرئيسية
                 </button>
             </div>
           )}
-
         </div>
       </div>
     </div>

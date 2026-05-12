@@ -14,7 +14,7 @@ import Offers from './pages/Offers';
 import { Toaster, toast } from 'react-hot-toast';
 import TrackBooking from './pages/TrackBooking';
 import WhatsAppButton from './components/WhatsAppButton';
-
+import html2pdf from 'html2pdf.js';
 // --- 1. مكون عرض السيارات (Fleet Section) ---
 const CarFleet = ({ cars, filters }) => {
   const [categoryFilter, setCategoryFilter] = useState('كل السيارات');
@@ -150,9 +150,14 @@ const Admin = ({ cars, fetchCars, setToken }) => {
 
   const [bookings, setBookings] = useState([]);
   const [selectedDossier, setSelectedDossier] = useState(null);
-  
+  const [searchTerm, setSearchTerm] = useState(''); // 👈 هادي ديال البحث
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, id: null, type: '', newStatus: '' });
-
+  // فلترة الحجوزات على حسب شنو كتب الأدمين فـ البحث
+  const filteredBookings = bookings.filter(b => 
+      (b.customer?.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (b.customer?.phone || '').includes(searchTerm) ||
+      (b.referenceCode || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
   const fetchBookings = () => {
     // 🔥 بدل هاد الرابط بالرابط ديال Replit ملي تبغي تلوح لـ Vercel
     axios.get('https://backend--olpkmmkjhh266.replit.app/api/bookings').then(res => setBookings(res.data));
@@ -161,6 +166,37 @@ const Admin = ({ cars, fetchCars, setToken }) => {
   useEffect(() => {
     fetchBookings();
   }, []);
+  // 📊 دالة تحميل تقرير الإكسيل
+  const exportToExcel = () => {
+    // العناوين ديال الجدول فـ الإكسيل
+    const headers = ['الكود المرجعي', 'الزبون', 'رقم الهاتف', 'رقم البطاقة الوطنية', 'تاريخ الاستلام', 'تاريخ الإرجاع', 'المبلغ الاجمالي (درهم)', 'حالة الطلب'];
+    
+    // تحويل البيانات
+    const rows = bookings.map(b => [
+      b.referenceCode || 'N/A',
+      b.customer?.fullName || 'N/A',
+      b.customer?.phone || 'N/A',
+      b.customer?.idCard || 'N/A',
+      new Date(b.startDate).toLocaleDateString('ar-MA'),
+      new Date(b.endDate).toLocaleDateString('ar-MA'),
+      b.totalPrice,
+      b.status
+    ]);
+
+    // تجميع الملف مع دعم اللغة العربية (UTF-8 BOM)
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    
+    // تحميل الملف
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `تقرير_حجوزات_NINJACARS.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    
+    toast.success('تم تحميل التقرير بنجاح! 📊');
+  };
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -232,13 +268,80 @@ const Admin = ({ cars, fetchCars, setToken }) => {
     }
     setConfirmDialog({ isOpen: false, id: null, type: '', newStatus: '' });
   };
+// دالة توليد عقد الكراء PDF
+  const generateContract = (booking) => {
+    // كود HTML مخفي غيتحول لـ PDF
+    const element = document.createElement('div');
+    element.innerHTML = `
+      <div style="padding: 40px; font-family: 'Arial', sans-serif; direction: rtl; text-align: right; background: white; color: black;">
+          <div style="text-align: center; border-bottom: 2px solid #c4a661; padding-bottom: 20px; margin-bottom: 30px;">
+              <h1 style="color: #000; margin: 0;">NINJA CARS</h1>
+              <h3 style="color: #666; margin: 5px 0 0 0;">عقد كراء سيارة - Contrat de Location</h3>
+              <p style="color: #c4a661; font-weight: bold; margin-top: 10px;">رقم العقد: ${booking.referenceCode}</p>
+          </div>
+          
+          <div style="margin-top: 30px; display: flex; justify-content: space-between;">
+              <div style="width: 48%; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
+                  <h3 style="color: #c4a661; border-bottom: 1px solid #eee; padding-bottom: 10px;">معلومات الزبون / Locataire</h3>
+                  <p><strong>الاسم الكامل:</strong> ${booking.customer?.fullName}</p>
+                  <p><strong>رقم الهاتف:</strong> ${booking.customer?.phone}</p>
+                  <p><strong>رقم البطاقة الوطنية:</strong> ${booking.customer?.idCard}</p>
+              </div>
+              
+              <div style="width: 48%; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
+                  <h3 style="color: #c4a661; border-bottom: 1px solid #eee; padding-bottom: 10px;">معلومات الحجز / Détails</h3>
+                  <p><strong>تاريخ الاستلام:</strong> ${new Date(booking.startDate).toLocaleDateString('ar-MA')}</p>
+                  <p><strong>تاريخ الإرجاع:</strong> ${new Date(booking.endDate).toLocaleDateString('ar-MA')}</p>
+                  <p><strong>المبلغ الإجمالي:</strong> <span style="color: #c4a661; font-weight: bold; font-size: 18px;">${booking.totalPrice} DH</span></p>
+              </div>
+          </div>
 
+          <div style="margin-top: 40px; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
+              <h3 style="color: #c4a661; border-bottom: 1px solid #eee; padding-bottom: 10px;">الشروط والأحكام / Conditions</h3>
+              <ul style="font-size: 12px; color: #555; line-height: 1.8;">
+                  <li>يقر المكتري أنه تسلم السيارة في حالة جيدة وصالحة للاستعمال.</li>
+                  <li>يتحمل المكتري جميع المسؤوليات القانونية والمادية في حالة وقوع حادث أو مخالفة مرورية.</li>
+                  <li>يجب إرجاع السيارة في الوقت المتفق عليه، وأي تأخير يؤدي إلى دفع غرامة إضافية.</li>
+              </ul>
+          </div>
+          
+          <div style="margin-top: 50px; display: flex; justify-content: space-between; text-align: center;">
+              <div style="width: 45%;">
+                  <h4 style="color: #333;">توقيع وإمضاء الوكالة</h4>
+                  <div style="height: 100px; margin-top: 10px; border-bottom: 1px dashed #ccc;">
+                     <h2 style="color: #c4a661; opacity: 0.5; transform: rotate(-10deg); margin-top: 30px;">NINJA CARS</h2>
+                  </div>
+              </div>
+              <div style="width: 45%;">
+                  <h4 style="color: #333;">توقيع المكتري (Signature)</h4>
+                  <div style="height: 100px; margin-top: 10px; border-bottom: 1px dashed #ccc; display: flex; justify-content: center; align-items: center;">
+                      ${booking.signatureImage ? `<img src="${booking.signatureImage}" style="max-height: 80px; filter: contrast(1.5) grayscale(1);" />` : '<p style="color: #999;">لم يتم التوقيع</p>'}
+                  </div>
+              </div>
+          </div>
+      </div>
+    `;
+
+    // إعدادات الـ PDF
+    const opt = {
+      margin:       0.5,
+      filename:     `Contract_${booking.referenceCode}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    // توليد وتحميل الملف
+    toast.loading('جاري تجهيز العقد...', { duration: 2000 });
+    html2pdf().set(opt).from(element).save();
+  };
   const openWhatsApp = (phone, refCode) => {
     let formattedPhone = phone;
     if (phone.startsWith('0')) formattedPhone = '212' + phone.substring(1);
     const message = `مرحباً، نتواصل معك من وكالة NINJA CARS بخصوص طلب الحجز رقم *${refCode}*.`;
     window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
+// فلترة الحجوزات على حسب شنو كتب الأدمين فـ البحث
 
   return (
     <div className="max-w-[1400px] mx-auto py-16 md:py-24 px-4 sm:px-6 text-white font-['Cairo'] relative" dir="rtl">
@@ -375,6 +478,21 @@ const Admin = ({ cars, fetchCars, setToken }) => {
             <span className="w-1.5 h-6 bg-[#c4a661] rounded-full"></span>
             سجل طلبات الحجز (CRM)
           </h3>
+          <div className="flex gap-3 w-full md:w-auto">
+              <input 
+                type="text" 
+                placeholder="🔍 ابحث بالاسم، الهاتف، أو الكود..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-[#111] border border-white/10 px-4 py-2 rounded-xl text-sm font-bold outline-none focus:border-[#c4a661] transition-all w-full md:w-64"
+              />
+              <button 
+                onClick={exportToExcel}
+                className="bg-green-600/20 text-green-500 border border-green-600/30 hover:bg-green-600 hover:text-white px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 whitespace-nowrap shadow-lg shadow-green-600/10 cursor-pointer"
+              >
+                📊 تصدير Excel
+              </button>
+            </div>
           {/* هاد الديف هو اللي كيحمي الشاشة من التمدد إيلا كان الجدول طويل */}
           <div className="w-full overflow-x-auto custom-scrollbar pb-4">
             <div className="bg-[#111111] rounded-[2rem] border border-white/5 shadow-2xl min-w-[800px] md:min-w-[1000px]">
@@ -388,7 +506,7 @@ const Admin = ({ cars, fetchCars, setToken }) => {
                   </tr>
                 </thead>
                 <tbody className="text-sm">
-                  {bookings.slice().reverse().map(b => (
+                  {filteredBookings.slice().reverse().map(b => (
                     <tr key={b._id} className="border-b border-white/[0.02] hover:bg-[#151515] transition-all group">
                       
                       <td className="p-4 md:p-6">
@@ -442,6 +560,12 @@ const Admin = ({ cars, fetchCars, setToken }) => {
                               className="bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[10px] md:text-[11px] font-black transition-all cursor-pointer"
                             >
                               🗑️
+                            </button>
+                            <button 
+                              onClick={() => generateContract(b)}
+                              className="w-full bg-white/5 border border-white/10 hover:bg-white hover:text-black text-white px-4 py-2 rounded-xl text-[11px] font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm mb-2"
+                            >
+                              📄 تحميل العقد (PDF)
                             </button>
                           </div>
                         </div>
